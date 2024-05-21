@@ -18,7 +18,6 @@ runs:
       name: ObservePoint Audit
       shell: bash
       run: |
-        run: |
         audit_ids_string="${{ inputs.audit_ids }}"
         audit_ids=(${audit_ids_string//,/ })
         fail_flag=0
