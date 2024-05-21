@@ -7,13 +7,7 @@ on:
 
 jobs:
   call_audit_workflow:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Call Audit Workflow
-        uses: ./.github/workflows/observepoint_audit.yml
-        with:
-          audit_ids: 335161
-          op_api_key: ${{ secrets.OP_API_KEY }}
+    uses: ./.github/workflows/observepoint_audit.yml@run_audit
+    with:
+      audit_ids: '335161'
+      op_api_key: ${{ secrets.OP_API_KEY }}
