@@ -3,6 +3,14 @@ name: ObservePoint Audit
 description:
   Starts ObservePoint audits and checks for successful start.
 
+inputs:
+  audit_ids:
+    description: 'Comma-separated list of audit IDs to start.'
+    required: true
+  op_api_key:
+    description: 'API key for ObservePoint.'
+    required: true
+
 runs:
   using: 'composite'
   steps:
