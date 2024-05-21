@@ -7,7 +7,7 @@ on:
 
 jobs:
   call_audit_workflow:
-    uses: ./.github/workflows/observepoint_audit.yml@run_audit
+    uses: ./observepoint_audit.yml
     with:
       audit_ids: '335161'
       op_api_key: ${{ secrets.OP_API_KEY }}
