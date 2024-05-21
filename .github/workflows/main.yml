@@ -9,7 +9,9 @@ jobs:
   demo_job:
     runs-on: ubuntu-latest
     steps:
-      - name: Use local hello-world-action
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Start ObservePoint audits
         uses: ./.github/actions/run_op_audit
         with:
           audit_ids: '335161'
