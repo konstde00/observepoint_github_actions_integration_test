@@ -12,21 +12,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Build
-        run: sleep 30
+        run: sleep 120
 
   test:
     name: Test
     runs-on: ubuntu-latest
     steps:
       - name: Test
-        run: sleep 45
+        run: sleep 200
 
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
     steps:
       - name: Deploy
-        run: sleep 35
+        run: sleep 180
 
   run_observepoint_audits:
     name: Run ObservePoint Audits
