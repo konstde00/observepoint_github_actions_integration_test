@@ -6,7 +6,20 @@ on:
       - main
 
 jobs:
-  demo_job:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build
+        run: echo "Building the app"
+
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy
+        run: echo "Deploying the app"
+
+  run_observepoint_audits:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
