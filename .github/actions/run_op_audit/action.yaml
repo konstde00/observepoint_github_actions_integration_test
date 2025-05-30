@@ -1,7 +1,8 @@
 name: ObservePoint Audit
 
-description:
-  Starts ObservePoint audits and checks for successful start.
+description: |
+  Starts ObservePoint audits and checks for successful start,
+  sending along callbackAttributes for downstream workflow_dispatch.
 
 inputs:
   audit_ids:
@@ -10,35 +11,69 @@ inputs:
   op_api_key:
     description: 'API key for ObservePoint.'
     required: true
+  callback_url:
+    description: 'Full URL to GitHub Actions workflow_dispatch endpoint for callbacks.'
+    required: true
+  callback_token:
+    description: 'GitHub token to authorize the callback workflow_dispatch.'
+    required: true
+  pr_number:
+    description: 'Pull Request number to correlate results.'
+    required: true
+  commit_sha:
+    description: 'Commit SHA to set status against.'
+    required: true
 
 runs:
   using: 'composite'
   steps:
-    - id: set-outputs
-      name: ObservePoint Audit
+    - id: start-audits
+      name: Start ObservePoint Audits
       shell: bash
       run: |
         audit_ids_string="${{ inputs.audit_ids }}"
-        audit_ids=(${audit_ids_string//,/ })
+        IFS=',' read -r -a audit_ids <<< "$audit_ids_string"
         fail_flag=0
-        for audit_id in "${audit_ids[@]}"
-        do
-        response=$(curl -s -w "%{http_code}" -o response.json "https://app.observepointstaging.com/api/v2/web-audits/${audit_id}/runs" \
-          -H "authorization: api_key ${{ inputs.op_api_key }}" \
-          --data-raw '{}')
-        http_code="${response: -3}"
-        response_body=$(<response.json)
-        
-        if [[ "$http_code" =~ ^[45] ]]; then
-          echo "Failed request for Audit ID: $audit_id with HTTP Status: $http_code"
-          echo "Response Body:"
-          cat response.json
-          echo "------"
-          fail_flag=1
-        fi
+
+        for audit_id in "${audit_ids[@]}"; do
+          # build the payload including callbackAttributes
+          payload=$(
+            jq -n \
+              --arg cb_url "${{ inputs.callback_url }}" \
+              --arg cb_token "${{ inputs.callback_token }}" \
+              --arg pr "${{ inputs.pr_number }}" \
+              --arg sha "${{ inputs.commit_sha }}" \
+              '{ 
+                callbackAttributes: {
+                  callback_url: $cb_url,
+                  callback_token: $cb_token,
+                  pr_number: $pr,
+                  commit_sha: $sha
+                }
+              }'
+          )
+
+          # call the OP API to start the audit with callbackAttributes
+          http_code=$(curl -s -w "%{http_code}" \
+            -o response.json \
+            -X POST "https://app.observepointstaging.com/api/v2/web-audits/${audit_id}/runs" \
+            -H "authorization: api_key ${{ inputs.op_api_key }}" \
+            -H "Content-Type: application/json" \
+            --data "$payload"
+          )
+
+          if [[ "$http_code" =~ ^[45] ]]; then
+            echo "❌ Failed to start audit ${audit_id} (HTTP ${http_code})"
+            echo "Response body:"
+            cat response.json
+            echo "------"
+            fail_flag=1
+          else
+            echo "✅ Audit ${audit_id} started successfully."
+          fi
         done
-        
+
         if [ $fail_flag -eq 1 ]; then
-        echo "One or more audits failed to start correctly."
-        exit 1
+          echo "🚨 One or more audits failed to start."
+          exit 1
         fi
