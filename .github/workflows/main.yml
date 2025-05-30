@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Build
-        run: sleep 120
+        run: sleep 2
 
   test:
     name: Test
@@ -27,7 +27,7 @@ jobs:
       - build
     steps:
       - name: Test
-        run: sleep 200
+        run: sleep 2
 
   deploy:
     name: Deploy
@@ -36,7 +36,7 @@ jobs:
       - test
     steps:
       - name: Deploy
-        run: sleep 180
+        run: sleep 2
 
   run_observepoint_audits:
     name: Run ObservePoint Audits
@@ -50,7 +50,7 @@ jobs:
       - name: Start ObservePoint audits
         uses: ./.github/actions/run_op_audit
         with:
-          audit_ids:   '335161'
+          audit_ids:   '230171'
           op_api_key:  ${{ secrets.OP_API_KEY }}
           # point at the callback workflow you’ve created:
           callback_url:   https://api.github.com/repos/${{ github.repository }}/actions/workflows/audit-complete.yml/dispatches
