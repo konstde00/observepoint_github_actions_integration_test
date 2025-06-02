@@ -36,37 +36,31 @@ runs:
         fail_flag=0
 
         for audit_id in "${audit_ids[@]}"; do
-          # build the payload including callbackAttributes
-          payload=$(
-            jq -n \
-              --arg cb_url "${{ inputs.callback_url }}" \
-              --arg cb_token "${{ inputs.callback_token }}" \
-              --arg pr "${{ inputs.pr_number }}" \
-              --arg sha "${{ inputs.commit_sha }}" \
-              '{ 
-                githubActionsCallback: {
-                  callbackUrl: $cb_url,
-                  callbackToken: $cb_token,
-                  prNumber: $pr,
-                  commitSha: $sha
-                }
-              }'
+          # Build the **correct** payload
+          payload=$(jq -n \
+            --arg cb_url   "${{ inputs.callback_url }}" \
+            --arg cb_token "${{ inputs.callback_token }}" \
+            --arg pr       "${{ inputs.pr_number }}" \
+            --arg sha      "${{ inputs.commit_sha }}" '
+            {
+              callbackUrl:   $cb_url,
+              callbackToken: $cb_token,
+              prNumber:      ($pr | tonumber),
+              commitSha:     $sha
+            }'
           )
 
-          # call the OP API to start the audit with callbackAttributes
-          http_code=$(curl -s -w "%{http_code}" \
-            -o response.json \
+          # Start the audit
+          http_code=$(curl -s -w "%{http_code}" -o response.json \
             -X POST "https://app.observepointstaging.com/api/v2/web-audits/${audit_id}/runs" \
-            -H "authorization: api_key ${{ inputs.op_api_key }}" \
+            -H "Authorization: api_key ${{ inputs.op_api_key }}" \
             -H "Content-Type: application/json" \
             --data "$payload"
           )
 
           if [[ "$http_code" =~ ^[45] ]]; then
             echo "❌ Failed to start audit ${audit_id} (HTTP ${http_code})"
-            echo "Response body:"
             cat response.json
-            echo "------"
             fail_flag=1
           else
             echo "✅ Audit ${audit_id} started successfully."
@@ -77,3 +71,4 @@ runs:
           echo "🚨 One or more audits failed to start."
           exit 1
         fi
+    
