@@ -45,10 +45,10 @@ runs:
               --arg sha "${{ inputs.commit_sha }}" \
               '{ 
                 callbackAttributes: {
-                  callback_url: $cb_url,
-                  callback_token: $cb_token,
-                  pr_number: $pr,
-                  commit_sha: $sha
+                  callbackUrl: $cb_url,
+                  callbackToken: $cb_token,
+                  prNumber: $pr,
+                  commitSha: $sha
                 }
               }'
           )
