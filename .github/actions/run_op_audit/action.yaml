@@ -43,7 +43,7 @@ runs:
             --arg cb_token "${{ inputs.callback_token }}" \
             --arg pr       "${{ inputs.pr_number }}" \
             --arg sha      "${{ inputs.commit_sha }}" \
-            '{callbackUrl: $cb_url, callbackToken: $cb_token, commitSha: $sha} + ({prNumber: 123})')
+            '{callbackUrl: $cb_url, callbackToken: $cb_token, commitSha: $sha}')
         
           http_code=$(curl -s -w "%{http_code}" -o response.json \
             -X POST "https://app.observepointstaging.com/api/v2/web-audits/${audit_id}/runs" \
