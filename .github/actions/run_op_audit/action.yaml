@@ -39,17 +39,11 @@ runs:
         for audit_id in "${audit_ids[@]}"; do
           # Build the **correct** payload
           payload=$(jq -n \
-          --arg cb_url   "${{ inputs.callback_url }}" \
-          --arg cb_token "${{ inputs.callback_token }}" \
-          --arg pr       "${{ inputs.pr_number }}" \
-          --arg sha      "${{ inputs.commit_sha }}" '
-          {                       # always-present fields
-            callbackUrl:   $cb_url,
-            callbackToken: $cb_token,
-            commitSha:     $sha,
-            prNumber:      123
-          }
-           '
+            --arg cb_url   "${{ inputs.callback_url }}" \
+            --arg cb_token "${{ inputs.callback_token }}" \
+            --arg pr       "${{ inputs.pr_number }}" \
+            --arg sha      "${{ inputs.commit_sha }}" \
+            '{callbackUrl: $cb_url, callbackToken: $cb_token, commitSha: $sha} + ({prNumber: 123})')
         
           http_code=$(curl -s -w "%{http_code}" -o response.json \
             -X POST "https://app.observepointstaging.com/api/v2/web-audits/${audit_id}/runs" \
