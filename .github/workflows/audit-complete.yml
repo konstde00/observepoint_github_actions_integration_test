@@ -1,0 +1,22 @@
+name: ObservePoint – audit complete
+
+on:
+  workflow_dispatch:
+    inputs:
+      audit_id:
+        description: "ObservePoint audit ID"
+        required: true
+      pr_number:
+        description: "PR number (optional)"
+        required: false
+      commit_sha:
+        description: "Commit SHA the audit relates to"
+        required: true
+
+jobs:
+  success:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print success
+        run: |
+          echo "✅ Audit ${{ inputs.audit_id }} finished for commit ${{ inputs.commit_sha }} (PR #${{ inputs.pr_number || 'N/A' }})"
