@@ -48,12 +48,12 @@ runs:
             callbackToken: $cb_token,
             commitSha:     $sha
           }
-            ( ($pr|length)>0
+          + ( ($pr|length)>0
             ? {prNumber: ($pr|tonumber)}
             : {}
             )
           ')
-  
+        
           http_code=$(curl -s -w "%{http_code}" -o response.json \
             -X POST "https://app.observepointstaging.com/api/v2/web-audits/${audit_id}/runs" \
             -H "Authorization: api_key ${{ inputs.op_api_key }}" \
@@ -74,4 +74,3 @@ runs:
           echo "🚨 One or more audits failed to start."
           exit 1
         fi
-    
