@@ -77,4 +77,3 @@ runs:
           echo "🚨 One or more audits failed to start."
           exit 1
         fi
-
