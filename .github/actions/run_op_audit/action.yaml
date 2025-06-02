@@ -44,7 +44,7 @@ runs:
               --arg pr "${{ inputs.pr_number }}" \
               --arg sha "${{ inputs.commit_sha }}" \
               '{ 
-                callbackAttributes: {
+                githubActionsCallback: {
                   callbackUrl: $cb_url,
                   callbackToken: $cb_token,
                   prNumber: $pr,
