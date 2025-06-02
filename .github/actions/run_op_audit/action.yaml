@@ -49,6 +49,7 @@ runs:
             commitSha:     $sha,
             prNumber:      123
           }
+           '
         
           http_code=$(curl -s -w "%{http_code}" -o response.json \
             -X POST "https://app.observepointstaging.com/api/v2/web-audits/${audit_id}/runs" \
