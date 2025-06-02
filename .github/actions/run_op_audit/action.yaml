@@ -5,6 +5,10 @@ description: |
   sending along callbackAttributes for downstream workflow_dispatch.
 
 inputs:
+  pr_number:
+    description: 'Pull-Request number (omit on push)'
+    required: false          # ← not required
+    default: ''              # ← empty string is fine
   audit_ids:
     description: 'Comma-separated list of audit IDs to start.'
     required: true
@@ -16,9 +20,6 @@ inputs:
     required: true
   callback_token:
     description: 'GitHub token to authorize the callback workflow_dispatch.'
-    required: true
-  pr_number:
-    description: 'Pull Request number to correlate results.'
     required: true
   commit_sha:
     description: 'Commit SHA to set status against.'
@@ -38,19 +39,21 @@ runs:
         for audit_id in "${audit_ids[@]}"; do
           # Build the **correct** payload
           payload=$(jq -n \
-            --arg cb_url   "${{ inputs.callback_url }}" \
-            --arg cb_token "${{ inputs.callback_token }}" \
-            --arg pr       "${{ inputs.pr_number }}" \
-            --arg sha      "${{ inputs.commit_sha }}" '
-            {
-              callbackUrl:   $cb_url,
-              callbackToken: $cb_token,
-              prNumber:      ($pr | tonumber),
-              commitSha:     $sha
-            }'
-          )
-
-          # Start the audit
+          --arg cb_url   "${{ inputs.callback_url }}" \
+          --arg cb_token "${{ inputs.callback_token }}" \
+          --arg pr       "${{ inputs.pr_number }}" \
+          --arg sha      "${{ inputs.commit_sha }}" '
+          {                       # always-present fields
+            callbackUrl:   $cb_url,
+            callbackToken: $cb_token,
+            commitSha:     $sha
+          }
+            ( ($pr|length)>0
+            ? {prNumber: ($pr|tonumber)}
+            : {}
+            )
+          ')
+  
           http_code=$(curl -s -w "%{http_code}" -o response.json \
             -X POST "https://app.observepointstaging.com/api/v2/web-audits/${audit_id}/runs" \
             -H "Authorization: api_key ${{ inputs.op_api_key }}" \
