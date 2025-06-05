@@ -1,3 +1,5 @@
+# audit-complete.yml
+
 name: ObservePoint – audit complete
 
 on:
@@ -6,17 +8,42 @@ on:
       audit_id:
         description: "ObservePoint audit ID"
         required: true
-      pr_number:
-        description: "PR number (optional)"
-        required: false
-      commit_sha:
-        description: "Commit SHA the audit relates to"
+      run_id:
+        description: "ObservePoint audit run ID"
+        required: true
+      alerts_triggered:
+        description: "Boolean flag indicating if alerts were triggered"
+        required: true
+        type: boolean
+      audit_run_ui_link:
+        description: "Link to audit run UI"
+        required: true
+      context:
+        description: "Original context JSON object (repo, branch, commit hash, etc.)"
         required: true
 
 jobs:
-  success:
+  audit-complete:
     runs-on: ubuntu-latest
     steps:
-      - name: Print success
+      - name: Process audit completion
         run: |
-          echo "✅ Audit ${{ inputs.audit_id }} finished for commit ${{ inputs.commit_sha }} (PR #${{ inputs.pr_number || 'N/A' }})"
+          echo "🔍 Processing audit completion..."
+          echo "Audit ID: ${{ inputs.audit_id }}"
+          echo "Run ID: ${{ inputs.run_id }}"
+          echo "Alerts Triggered: ${{ inputs.alerts_triggered }}"
+          echo "Audit Run UI: ${{ inputs.audit_run_ui_link }}"
+          echo "Context: ${{ inputs.context }}"
+
+      - name: Check audit result
+        run: |
+          if [ "${{ inputs.alerts_triggered }}" = "true" ]; then
+            echo "❌ Audit failed - alerts were triggered"
+            echo "::error::Audit ${{ inputs.audit_id }} (Run: ${{ inputs.run_id }}) failed with alerts"
+            echo "::notice::View details: ${{ inputs.audit_run_ui_link }}"
+            exit 1
+          else
+            echo "✅ Audit passed - no alerts triggered"
+            echo "::notice::Audit ${{ inputs.audit_id }} (Run: ${{ inputs.run_id }}) completed successfully"
+            echo "::notice::View details: ${{ inputs.audit_run_ui_link }}"
+          fi
