@@ -1,5 +1,3 @@
-# audit-complete.yml
-
 name: ObservePoint – audit complete
 
 on:
@@ -12,9 +10,9 @@ on:
         description: "ObservePoint audit run ID"
         required: true
       alerts_triggered:
-        description: "Boolean flag indicating if alerts were triggered"
+        description: "Number of alerts triggered"
         required: true
-        type: boolean
+        type: number
       audit_run_ui_link:
         description: "Link to audit run UI"
         required: true
@@ -37,13 +35,13 @@ jobs:
 
       - name: Check audit result
         run: |
-          if [ "${{ inputs.alerts_triggered }}" = "true" ]; then
-            echo "❌ Audit failed - alerts were triggered"
-            echo "::error::Audit ${{ inputs.audit_id }} (Run: ${{ inputs.run_id }}) failed with alerts"
+          if [ "${{ inputs.alerts_triggered }}" -gt 0 ]; then
+            echo "❌ Audit failed - ${{ inputs.alerts_triggered }} alert(s) were triggered"
+            echo "::error::Audit ${{ inputs.audit_id }} (Run: ${{ inputs.run_id }}) failed with ${{ inputs.alerts_triggered }} alert(s)"
             echo "::notice::View details: ${{ inputs.audit_run_ui_link }}"
             exit 1
           else
-            echo "✅ Audit passed - no alerts triggered"
+            echo "✅ Audit passed – no alerts triggered"
             echo "::notice::Audit ${{ inputs.audit_id }} (Run: ${{ inputs.run_id }}) completed successfully"
             echo "::notice::View details: ${{ inputs.audit_run_ui_link }}"
           fi
