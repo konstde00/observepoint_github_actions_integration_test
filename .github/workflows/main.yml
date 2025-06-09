@@ -52,14 +52,13 @@ jobs:
       - name: Start ObservePoint audits
         uses: ./.github/actions/run_op_audit
         with:
-          audit_ids:   '230171'
-          op_api_key:  ${{ secrets.OP_API_KEY }}
-          # point at the callback workflow you’ve created:
-          callback_url:   https://api.github.com/repos/${{ github.repository }}/actions/workflows/audit-complete.yml/dispatches
-          # use the built-in token to authorize that dispatch
+          audit_ids: '230171'
+          starting_urls: 'https://dominos.ua/uk/kyiv,https://dominos.ua/'
+          op_api_key: ${{ secrets.OP_API_KEY }}
+          callback_owner: ${{ github.repository_owner }}
+          callback_repo: ${{ github.event.repository.name }}
+          callback_workflow_file: 'audit-complete.yml'
+          callback_ref: 'main'
           callback_token: ${{ secrets.GITHUB_TOKEN }}
-          # if you’re on a PR you can pull in ${{ github.event.pull_request.number }},
-          # but on a plain push you can omit pr_number and update your action to make it optional.
-          pr_number:      ${{ github.event.pull_request.number || '' }}
-          # commit SHA for setting status
-          commit_sha:     ${{ github.sha }}
+          pr_number: ${{ github.event.pull_request.number }}
+          commit_sha: ${{ github.sha }}
