@@ -1,7 +1,7 @@
 name: ObservePoint – audit complete
 
 on:
-  workflow_dispatch:
+  repository_dispatch:
     inputs:
       audit_id:
         description: "ObservePoint audit ID"
