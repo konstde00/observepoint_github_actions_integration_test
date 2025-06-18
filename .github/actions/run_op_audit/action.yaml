@@ -1,4 +1,3 @@
-# action.yaml
 
 name: ObservePoint Audit (v3)
 
@@ -38,12 +37,12 @@ inputs:
     description: 'Repository that contains the workflow to consume the callback.'
     required: true
   callback_workflow_file:
-    description: 'Workflow‑file name (e.g. audit-complete.yml) that will be triggered by workflow_dispatch.'
+    description: 'Workflow‑file name (e.g. observepoint-audit-complete) that will be triggered by workflow_dispatch.'
     required: true
   callback_ref:
     description: 'Git ref (branch) to run the downstream workflow on.'
     required: true
-  # Personal‑access token / GITHUB_TOKEN with workflow‑dispatch:write (still needed by the callback)  
+  # Personal‑access token / GITHUB_TOKEN with workflow‑dispatch:write (still needed by the callback)
   callback_token:
     description: 'GitHub token used by ObservePoint callback to dispatch the workflow.'
     required: true
@@ -76,16 +75,17 @@ runs:
 
         # Construct payload for v3 endpoint ---------------------------------
         payload=$(jq -n \
-          --argjson startingUrls "${starting_urls_json}" \
-          --arg owner          "${{ inputs.callback_owner }}" \
-          --arg repo           "${{ inputs.callback_repo }}" \
-          --arg workflow_file  "${{ inputs.callback_workflow_file }}" \
-          --arg ref            "${{ inputs.callback_ref }}" \
-          --arg cb_token       "${{ inputs.callback_token }}" \
-          --arg pr             "${{ inputs.pr_number }}" \
-          --arg commitSha      "${{ inputs.commit_sha }}" \
+          --argjson startingUrls          "${starting_urls_json}" \
+          --arg owner                     "${{ inputs.callback_owner }}" \
+          --arg repo                      "${{ inputs.callback_repo }}" \
+          --arg callbackWorkflowFileName  "${{ inputs.callback_workflow_file }}" \
+          --arg ref                       "${{ inputs.callback_ref }}" \
+          --arg cb_token                  "${{ inputs.callback_token }}" \
+          --arg pr                        "${{ inputs.pr_number }}" \
+          --arg commitSha                 "${{ inputs.commit_sha }}" \
           '{
             startingUrls: $startingUrls,
+            callbackWorkflowFileName: $callbackWorkflowFileName,
             callbackContext: {
               owner:          $owner,
               repo:           $repo,
