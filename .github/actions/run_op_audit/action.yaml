@@ -89,7 +89,6 @@ runs:
             callbackContext: {
               owner:          $owner,
               repo:           $repo,
-              workflow_file:  $workflow_file,
               ref:            $ref,
               callbackToken:  $cb_token,
               prNumber:       $pr,
