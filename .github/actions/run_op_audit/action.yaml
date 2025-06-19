@@ -84,6 +84,8 @@ runs:
           '{
             startingUrls: $startingUrls,
             callbackWorkflowEventType: $callbackWorkflowEventType,
+            callbackRepositoryOwner:   $callbackRepositoryOwner,
+            callbackRepositoryName:    $callbackRepositoryName,
             callbackContext: {
               ref:            $ref,
               prNumber:       $pr,
