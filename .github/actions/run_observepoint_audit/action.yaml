@@ -1,5 +1,5 @@
 
-name: ObservePoint Audit
+name: ObservePoint Audit (v3)
 
 description: |
   Starts an ObservePoint web‑audit through the v3 API and checks
@@ -11,6 +11,10 @@ description: |
 # INPUTS
 # ------------------------------------------------------------------------------
 inputs:
+  pr_number:
+    description: 'Pull‑Request number (omit on push).'
+    required: false
+    default: ''
 
   audit_id:
     description: 'Audit ID to start.'
@@ -98,7 +102,7 @@ runs:
                commitSha: $commitSha
              }
            )
-        }')
+         }')
 
         # POST to the v3 API -------------------------------------------------
         http_code=$(curl -s -w "%{http_code}" -o response.json \
