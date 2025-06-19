@@ -75,8 +75,8 @@ runs:
           --arg owner                     "${{ inputs.callback_owner }}" \
           --arg repo                      "${{ inputs.callback_repo }}" \
           --arg callbackWorkflowEventType "${{ inputs.callback_event_type }}" \
-          --arg callbackRepositoryOwner   "${{ inputs.owner }}" \
-          --arg callbackRepositoryName    "${{ inputs.repo }}" \
+          --arg callbackRepositoryOwner   "${{ inputs.callback_owner }}" \
+          --arg callbackRepositoryName    "${{ inputs.callback_repo }}" \
           --arg ref                       "${{ inputs.callback_ref }}" \
           --arg cb_token                  "${{ inputs.callback_token }}" \
           --arg pr                        "${{ inputs.pr_number }}" \
