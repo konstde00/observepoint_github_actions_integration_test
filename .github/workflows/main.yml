@@ -64,5 +64,5 @@ jobs:
           callback_context_json: >
             {
               "env":      "staging",
-              "jira":     "ABC-123",
+              "jira":     "ABC-123"
             }
