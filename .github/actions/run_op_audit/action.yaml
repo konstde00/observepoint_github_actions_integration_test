@@ -1,5 +1,5 @@
 
-name: ObservePoint Audit (v3)
+name: ObservePoint Audit
 
 description: |
   Starts an ObservePoint web‑audit through the v3 API and checks
@@ -11,10 +11,6 @@ description: |
 # INPUTS
 # ------------------------------------------------------------------------------
 inputs:
-  pr_number:
-    description: 'Pull‑Request number (omit on push).'
-    required: false
-    default: ''
 
   audit_id:
     description: 'Audit ID to start.'
@@ -26,7 +22,7 @@ inputs:
     required: true
 
   # ObservePoint API key stored in repo / org secrets
-  op_api_key:
+  observepoint_api_key:
     description: 'API key for ObservePoint.'
     required: true
 
@@ -42,6 +38,13 @@ inputs:
   callback_ref:
     description: 'Git ref (branch) to run the downstream workflow on.'
     required: true
+  callback_context_json:
+    description: |
+      Optional JSON object (stringified) that will be *merged* into
+      callbackContext.  
+      Example: '{"env":"staging","prNumber":"ABC-123"}'
+    required: false
+    default: '{}'
 
   commit_sha:
     description: 'Commit SHA to set status against (optional in v3; still forwarded for traceability).'
@@ -69,34 +72,38 @@ runs:
         audit_id="${{ inputs.audit_id }}"
         echo "📣 Triggering audit ID ${audit_id} …"
 
-        # Construct payload for v3 endpoint ---------------------------------
+        user_ctx='${{ inputs.callback_context_json }}'
+        if [[ -z "$user_ctx" ]]; then user_ctx='{}'; fi
+        
+        # ---------- build payload ----------
         payload=$(jq -n \
-          --argjson startingUrls          "${starting_urls_json}" \
-          --arg owner                     "${{ inputs.callback_owner }}" \
-          --arg repo                      "${{ inputs.callback_repo }}" \
-          --arg callbackWorkflowEventType "${{ inputs.callback_event_type }}" \
-          --arg callbackRepositoryOwner   "${{ inputs.callback_owner }}" \
-          --arg callbackRepositoryName    "${{ inputs.callback_repo }}" \
-          --arg ref                       "${{ inputs.callback_ref }}" \
-          --arg cb_token                  "${{ inputs.callback_token }}" \
-          --arg pr                        "${{ inputs.pr_number }}" \
-          --arg commitSha                 "${{ inputs.commit_sha }}" \
-          '{
-            startingUrls: $startingUrls,
-            callbackWorkflowEventType: $callbackWorkflowEventType,
-            callbackRepositoryOwner:   $callbackRepositoryOwner,
-            callbackRepositoryName:    $callbackRepositoryName,
-            callbackContext: {
-              ref:            $ref,
-              prNumber:       $pr,
-              commitSha:      $commitSha
-            }
-          }')
+        --argjson startingUrls          "$starting_urls_json" \
+        --arg callbackWorkflowEventType "${{ inputs.callback_event_type }}" \
+        --arg callbackRepositoryOwner   "${{ inputs.callback_owner }}" \
+        --arg callbackRepositoryName    "${{ inputs.callback_repo }}" \
+        --arg ref                       "${{ inputs.callback_ref }}" \
+        --arg pr                        "${{ inputs.pr_number }}" \
+        --arg commitSha                 "${{ inputs.commit_sha }}" \
+        --argjson userContext           "$user_ctx" \
+        '{
+           startingUrls: $startingUrls,
+           callbackWorkflowEventType: $callbackWorkflowEventType,
+           callbackRepositoryOwner:   $callbackRepositoryOwner,
+           callbackRepositoryName:    $callbackRepositoryName,
+           callbackContext: (
+             $userContext +              
+             {
+               ref:       $ref,
+               prNumber:  $pr,
+               commitSha: $commitSha
+             }
+           )
+        }')
 
         # POST to the v3 API -------------------------------------------------
         http_code=$(curl -s -w "%{http_code}" -o response.json \
           -X POST "https://app.observepoint.com/api/v3/web-audits/${audit_id}/runs" \
-          -H "Authorization: api_key ${{ inputs.op_api_key }}" \
+          -H "Authorization: api_key ${{ inputs.observepoint_api_key }}" \
           -H "Content-Type: application/json" \
           --data "${payload}")
 
