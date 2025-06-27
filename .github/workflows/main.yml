@@ -8,6 +8,7 @@ on:
 
 # Grant permission to dispatch other workflows
 permissions:
+  id-token: write     # allows Actions to mint an OIDC token
   contents: read              # to check out your code
   actions: write              # to trigger workflow_dispatch
   pull-requests: write        # if you ever comment on PRs
