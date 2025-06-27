@@ -66,6 +66,14 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
+        
+        export GH_OIDC=$(curl -s \
+        -H "Authorization: $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+        "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=observepoint")
+        
+        echo "GH_OIDC is set to:" 
+        echo $GH_OIDC
+        echo "GH_OIDC size: ${#GH_OIDC}"
 
         # Split comma‑separated starting URLs into array
         IFS=',' read -r -a starting_urls_list <<< "${{ inputs.starting_urls }}"
