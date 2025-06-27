@@ -75,19 +75,12 @@ runs:
         echo "$GH_OIDC"
         echo "GH_OIDC size: ${#GH_OIDC}"
         
-        # ————————————————————————————————————————————
-          # Decode the JWT
-          # — Split into its three dot-separated parts — 
-          IFS='.' read -r _jwt_header _jwt_payload _jwt_sig <<< "$GH_OIDC"
-        
-          # — Base64-decode  jq-format header & payload —
-          echo "Decoded JWT header:"
-          echo "$_jwt_header" | tr '_-' '/+' | sed 's/\(.*\)/\1=='/ | base64 -d 2>/dev/null | jq .
-        
-          echo "Decoded JWT payload (claims):"
-          echo "$_jwt_payload" | tr '_-' '/+' | sed 's/\(.*\)/\1=='/ | base64 -d 2>/dev/null | jq .
-        
-          echo "— end of OIDC token inspection —"
+        echo "Decoding JWT header and payload:"
+        IFS='.' read -r _jwt_header _jwt_payload _jwt_sig <<< "$GH_OIDC"
+        echo "IFS: "
+        echo "$_jwt_header" | tr '_-' '/+' | sed 's/\(.*\)/\1=='/ | base64 -d 2>/dev/null | jq .
+        echo "decoded: "
+        echo "$_jwt_payload" | tr '_-' '/+' | sed 's/\(.*\)/\1=='/ | base64 -d 2>/dev/null | jq .
 
         # Split comma‑separated starting URLs into array
         IFS=',' read -r -a starting_urls_list <<< "${{ inputs.starting_urls }}"
