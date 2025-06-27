@@ -65,22 +65,41 @@ runs:
       name: Start ObservePoint Audit (v3)
       shell: bash
       run: |
-        set -euo pipefail
+          set -euo pipefail
         
-        export GH_OIDC=$(curl -s \
-        -H "Authorization: $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-        "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=observepoint")
-        
-        echo "GH_OIDC is set to (JWT):"
-        echo "$GH_OIDC"
-        echo "GH_OIDC size: ${#GH_OIDC}"
-        
-        echo "Decoding JWT header and payload:"
-        IFS='.' read -r _jwt_header _jwt_payload _jwt_sig <<< "$GH_OIDC"
-        echo "IFS: "
-        echo "$_jwt_header" | tr '_-' '/+' | sed 's/\(.*\)/\1=='/ | base64 -d 2>/dev/null | jq .
-        echo "decoded: "
-        echo "$_jwt_payload" | tr '_-' '/+' | sed 's/\(.*\)/\1=='/ | base64 -d 2>/dev/null | jq .
+          raw_oidc=$(curl -s \
+            -H "Authorization: $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=observepoint")
+      
+          # 2) extract just the .value field (the JWT)…
+          export GH_OIDC=$(echo "$raw_oidc" | jq -r '.value')
+      
+          echo "GH_OIDC size: ${#GH_OIDC}"
+      
+          # 3) helper to do URL-safe Base64 → JSON
+          decode_part() {
+          local part=$1
+          # add padding so length %4 == 0
+          local rem=$(( ${#part} % 4 ))
+          if (( rem > 0 )); then
+          part+=$(printf '=%.0s' $(seq $((4-rem))))
+          fi
+          printf '%s' "$part" \
+          | tr '_-' '/+' \
+          | base64 -d 2>/dev/null \
+          || return 0    # swallow errors
+        }
+    
+        if [[ "$GH_OIDC" =~ ^[^.]+\.[^.]+\.[^.]+$ ]]; then
+          IFS='.' read -r hdr pl sig <<<"$GH_OIDC"
+        echo "--- JWT header ---"
+        decode_part "$hdr" | jq . || true
+        echo "--- JWT payload ---"
+        decode_part "$pl"  | jq . || true
+        echo "------------------"
+        else
+        echo "⚠️  GH_OIDC is not in JWT format, skipping decode."
+        fi
 
         # Split comma‑separated starting URLs into array
         IFS=',' read -r -a starting_urls_list <<< "${{ inputs.starting_urls }}"
