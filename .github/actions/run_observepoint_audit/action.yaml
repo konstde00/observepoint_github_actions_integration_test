@@ -1,154 +1,67 @@
-name: ObservePoint Audit (v3)
 
-description: |
-  Starts an ObservePoint web-audit through the v3 API and checks
-  that the audit run is successfully created. Sends rich
-  callbackContext data so that a downstream workflow_dispatch
-  can process completion callbacks.
+name: Call ObservePoint Audit
 
-# ------------------------------------------------------------------------------
-# INPUTS
-# ------------------------------------------------------------------------------
-inputs:
-  pr_number:
-    description: 'Pull-Request number (omit on push).'
-    required: false
-    default: ''
+on:
+  push:
+    branches:
+      - main
 
-  audit_id:
-    description: 'Audit ID to start.'
-    required: true
+# Grant permission to dispatch other workflows
+permissions:
+  contents: read              # to check out your code
+  actions: write              # to trigger workflow_dispatch
+  pull-requests: write        # if you ever comment on PRs
 
-  starting_urls:
-    description: 'Comma-separated list of starting URLs passed to startingUrls.'
-    required: true
+jobs:
 
-  observepoint_api_key:
-    description: 'API key for ObservePoint.'
-    required: true
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build
+        run: sleep 2
 
-  callback_owner:
-    description: 'GitHub owner / organisation for the callback repository.'
-    required: true
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    steps:
+      - name: Test
+        run: sleep 2
 
-  callback_repo:
-    description: 'Repository that contains the workflow to consume the callback.'
-    required: true
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs:
+      - test
+    steps:
+      - name: Deploy
+        run: sleep 2
 
-  callback_event_type:
-    description: 'Event type name (e.g. observepoint-audit-complete) for repository_dispatch.'
-    required: true
+  run_observepoint_audit:
+    name: Run ObservePoint Audit
+    runs-on: ubuntu-latest
+    needs:
+      - deploy
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
 
-  callback_ref:
-    description: 'Git ref (branch) to run the downstream workflow on.'
-    required: true
+      - name: Start ObservePoint audit
+        uses: ./.github/actions/run_observepoint_audit
+        with:
+          audit_id: '1149283'
+          starting_urls: 'https://dominos.ua/uk/kyiv,https://dominos.ua/'
+          observepoint_api_key: ${{ secrets.observepoint_api_key }}
+          callback_owner: ${{ github.repository_owner }}
+          callback_repo: ${{ github.event.repository.name }}
+          callback_event_type: 'observepoint-audit-complete'
+          callback_ref: 'main'
+          pr_number: ${{ github.event.pull_request.number }}
+          commit_sha: ${{ github.sha }}
 
-  callback_context_json:
-    description: |
-      Optional JSON object (stringified) that will be *merged* into
-      callbackContext.  
-      Example: '{"env":"staging","prNumber":"ABC-123"}'
-    required: false
-    default: '{}'
-
-  commit_sha:
-    description: 'Commit SHA to set status against (optional in v3).'
-    required: false
-    default: ''
-
-# ------------------------------------------------------------------------------
-# EXECUTION ---------------------------------------------------------------------
-# ------------------------------------------------------------------------------
-runs:
-  using: 'composite'
-  steps:
-    - id: start-audit
-      name: Start ObservePoint Audit (v3)
-      shell: bash
-      run: |
-        set -euo pipefail
-
-        # 1) fetch the raw token JSON, extract the .value (the JWT)
-        raw_oidc=$(curl -s \
-          -H "Authorization: $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-          "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=observepoint")
-        export GH_OIDC=$(echo "$raw_oidc" | jq -r '.value')
-
-        echo "GH_OIDC size: ${#GH_OIDC}"
-
-        # 2) helper to URL-safe Base64 → JSON
-        decode_part() {
-          local part="$1"
-          # pad to multiple of 4
-          local rem=$(( ${#part} % 4 ))
-          if (( rem > 0 )); then
-            part+=$(printf '=%.0s' $(seq $((4-rem))))
-          fi
-          printf '%s' "$part" \
-            | tr '_-' '/+' \
-            | base64 -d 2>/dev/null \
-            || true
-        }
-
-        # 3) only split/decode if we got a true JWT
-        if [[ "$GH_OIDC" =~ ^[^.]+\.[^.]+\.[^.]+$ ]]; then
-          IFS='.' read -r hdr pl sig <<< "$GH_OIDC"
-          echo "--- JWT header ---"
-          decode_part "$hdr" | jq .    || true
-          echo "--- JWT payload ---"
-          decode_part "$pl"  | jq .    || true
-          echo "------------------"
-        else
-          echo "⚠️  GH_OIDC is not in JWT format; skipping decode."
-        fi
-
-        # 4) build the ObservePoint payload
-        IFS=',' read -r -a starting_urls_list <<< "${{ inputs.starting_urls }}"
-        starting_urls_json=$(printf '%s\n' "${starting_urls_list[@]}" | jq -R . | jq -s .)
-
-        audit_id="${{ inputs.audit_id }}"
-        echo "📣 Triggering audit ID ${audit_id} …"
-
-        user_ctx='${{ inputs.callback_context_json }}'
-        if [[ -z "$user_ctx" ]]; then user_ctx='{}'; fi
-
-        payload=$(jq -n \
-          --argjson startingUrls "$starting_urls_json" \
-          --arg callbackWorkflowEventType "${{ inputs.callback_event_type }}" \
-          --arg callbackRepositoryOwner   "${{ inputs.callback_owner }}" \
-          --arg callbackRepositoryName    "${{ inputs.callback_repo }}" \
-          --arg ref                       "${{ inputs.callback_ref }}" \
-          --arg pr                        "${{ inputs.pr_number }}" \
-          --arg commitSha                 "${{ inputs.commit_sha }}" \
-          --argjson userContext           "$user_ctx" \
-          '{
-             startingUrls: $startingUrls,
-             callbackWorkflowEventType: $callbackWorkflowEventType,
-             callbackRepositoryOwner:   $callbackRepositoryOwner,
-             callbackRepositoryName:    $callbackRepositoryName,
-             callbackContext: (
-               $userContext +              
-               {
-                 ref:       $ref,
-                 prNumber:  $pr,
-                 commitSha: $commitSha
-               }
-             )
-           }')
-
-        # 5) fire the API call
-        http_code=$(curl -s -w "%{http_code}" -o response.json \
-          -X POST "https://app.observepoint.com/api/v3/web-audits/${audit_id}/runs" \
-          -H "Authorization: api_key ${{ inputs.observepoint_api_key }}" \
-          -H "Content-Type: application/json" \
-          --data "${payload}")
-
-        # 6) error handling
-        if [[ "${http_code}" =~ ^[45] ]]; then
-          echo "❌ Failed to start audit ${audit_id} (HTTP ${http_code})"
-          cat response.json || true
-          exit 1
-        else
-          echo "✅ Audit ${audit_id} started successfully (HTTP ${http_code})."
-        fi
-
+          callback_context_json: >
+            {
+              "env":      "staging"
+            }

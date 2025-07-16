@@ -8,7 +8,6 @@ on:
 
 # Grant permission to dispatch other workflows
 permissions:
-  id-token: write     # allows Actions to mint an OIDC token
   contents: read              # to check out your code
   actions: write              # to trigger workflow_dispatch
   pull-requests: write        # if you ever comment on PRs
@@ -53,7 +52,7 @@ jobs:
         uses: ./.github/actions/run_observepoint_audit
         with:
           audit_id: '1149283'
-          starting_urls: 'https://dominos.ua/uk/kyiv'
+          starting_urls: 'https://dominos.ua/uk/kyiv,https://dominos.ua/'
           observepoint_api_key: ${{ secrets.observepoint_api_key }}
           callback_owner: ${{ github.repository_owner }}
           callback_repo: ${{ github.event.repository.name }}
@@ -64,7 +63,5 @@ jobs:
 
           callback_context_json: >
             {
-              "env":      "staging",
-              "jira":     "ABC-123"
+              "env":      "staging"
             }
-
