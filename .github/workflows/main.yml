@@ -48,8 +48,8 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Start ObservePoint audit
-        uses: ./.github/actions/run_observepoint_audit
+      - name: ObservePoint Audit (v3)
+        uses: observepoint/github-actions-integration@v1.0.0
         with:
           audit_id: '1149283'
           starting_urls: 'https://dominos.ua/uk/kyiv,https://dominos.ua/'
