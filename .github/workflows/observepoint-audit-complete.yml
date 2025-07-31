@@ -11,7 +11,7 @@ jobs:
       - name: Process audit completion
         run: |
           echo "🔍 Processing audit completion..."
-          echo "Full callback payload: ${{ github.event }}"
+          echo "Full callback payload: ${{ toJSON(github.event) }}"
           echo "Audit ID: ${{ github.event.client_payload.audit_id }}"
           echo "Run ID: ${{ github.event.client_payload.run_id }}"
           echo "Alerts Triggered: ${{ github.event.client_payload.alerts_triggered }}"
